@@ -7,8 +7,11 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { Gender } from '@prisma/client';
 
+enum Gender {
+  boy = 'boy',
+  girl = 'girl',
+}
 export class UpdateBabyDto {
   @Matches(/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[1-2][0-9]|3[0-1])$/)
   @IsNotEmpty()

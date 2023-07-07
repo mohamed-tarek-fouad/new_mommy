@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: mawlana/auth
+          ports:
+            - containerPort: 3001
+          env:
+            - name: PORT
+              value: '3001'
+            - name: DATABASE_URL
+              value: 'mongodb+srv://dangeroust:1468957542@childcare.fig6g8g.mongodb.net/%25retryWrites=true&w=majority'
+            - name: RMQ_URI
+              value: 'amqps://txgsohca:VETHVuZQ4Ffc5igGLvPhsuucvkpdWGnp@rattlesnake.rmq.cloudamqp.com/txgsohca'
+            - name: ACCESS_SECRET
+              value: Mwalana
+            - name: AT_SECRET
+              value: Mawlana
+            - name: RT_SECRET
+              value: Mawlana
+            - name: EMAIL_PASSWORD
+              value: bcvtemeeapbwdvfw
+            - name: EMAIL_USER
+              value: mdmedoo7@gmail.com
+            - name: EMAIL_HOST
+              value: smtp.gmail.com
+            - name: GOOGLE_CLIENT_ID
+              value: '354337611228-4nlkln5992ndbhoso8t5uf9skloiaf46.apps.googleusercontent.com'
+            - name: GOOGLE_CLIENT_SECRET
+              value: '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'
+            - name: GOOGLE_CALLBACK_URL
+              value: 'http://localhost:3001/api/auth/google/redirect'
+            - name: FACEBOOK_APP_ID
+              value: '634951934792603'
+            - name: FACEBOOK_APP_SECRET
+              value: 'e36f238214516c2b73d78c224602a593'
+            - name: FACEBOOK_CALLBACK_URL
+              value: 'http://localhost:3001/api/auth/facebook/redirect'
