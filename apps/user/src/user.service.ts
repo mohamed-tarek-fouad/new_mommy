@@ -8,7 +8,19 @@ import {
 } from '@nestjs/common';
 import { v2 as cloudinary } from 'cloudinary';
 import { BabyDto } from './dtos/babydto';
-import { UpdateBabyListDto } from './dtos/deleteUpdateBaby.dto';
+import { UpdateBabyDto } from './dtos/updateBaby.dto';
+import { AddMedicalDto } from './dtos/addMedicalDocument';
+import { UpdateMedicalDto } from './dtos/updateMedicalDocument';
+import { AddActivityDto } from './dtos/addActivity.dto';
+import { UpdateActivityDto } from './dtos/updateActivity.dto';
+import { AddFeedingDto } from './dtos/addFeeding.dto';
+import { UpdateFeedingDto } from './dtos/updateFeeding.dto';
+import { AddGrowthDto } from './dtos/addGrowthMilestone.dto';
+import { updateGrowthDto } from './dtos/updateGrowthMilestone.dto';
+import { AddFirstDto } from './dtos/addFirst.dto';
+import { UpdateFirstDto } from './dtos/updateFirst.dto';
+import { AddReminderDto } from './dtos/addReminder.dto';
+import { UpdateReminderDto } from './dtos/updateReminder.dto';
 // import { Cache } from 'cache-manager';
 @Injectable()
 export class UserService {
@@ -69,11 +81,11 @@ export class UserService {
         .end(buffer);
     });
   }
-  async addBaby(baby: BabyDto, req, image) {
+  async addBaby(babyDto: BabyDto, req, image) {
     const today = new Date();
 
     // Parse the birth date string and create a Date object
-    const birthdate = new Date(baby.birthDate);
+    const birthdate = new Date(babyDto.birthDate);
 
     // Calculate the person's age in years
     let age = today.getFullYear() - birthdate.getFullYear();
@@ -92,65 +104,238 @@ export class UserService {
     }
 
     const url = image ? await this.uploadImage(image[0].buffer) : null;
-    const babies = await this.prisma.users.findUnique({
-      where: {
-        id: req.user.id,
-      },
-      select: { baby: true },
-    });
-    let babyNameExist = '';
-    babies.baby.forEach((b) => {
-      if (b.babyName === baby.babyName) babyNameExist = b.babyName;
-    });
-    if (babyNameExist)
-      throw new HttpException(
-        'this baby Name does exist',
-        HttpStatus.BAD_REQUEST,
-      );
-    const babywithImage = {
-      ...baby,
-      image: url,
-      weight: Number(baby.weight),
-    };
-    const user = await this.prisma.users.update({
-      where: { id: req.user.id },
-      data: {
-        baby: {
-          push: babywithImage,
-        },
-      },
+    const user = await this.prisma.baby.create({
+      data: { ...babyDto, image: url, usersId: req.user.id },
     });
     return { user, message: 'updated babies successfully' };
   }
-  async deleteBaby(baby: BabyDto, req) {
-    const userById = await this.prisma.users.findUnique({
-      where: { id: req.user.id },
-      select: { baby: true },
+  async deleteBaby(id: string, req) {
+    await this.prisma.baby.deleteMany({
+      where: {
+        usersId: req.user.id,
+        id,
+      },
     });
-    const newArray = userById.baby.filter((b) => {
-      if (b.babyName !== baby.babyName) {
-        return b;
+    return { message: 'deleted baby successfully' };
+  }
+  async updateBaby(babyDto: UpdateBabyDto, req, id: string, images) {
+    const url = images ? await this.uploadImage(images[0].buffer) : null;
+    const imageToDelete = await this.prisma.baby.findUnique({ where: { id } });
+    const publicId = imageToDelete.image.split('/').pop().split('.')[0];
+    await cloudinary.uploader.destroy(publicId, (error) => {
+      if (error) {
+        console.error(error);
       }
     });
-    const user = await this.prisma.users.update({
+    const baby = await this.prisma.baby.updateMany({
       where: {
-        id: req.user.id,
+        id,
+        usersId: req.user.id,
       },
-      data: {
-        baby: newArray,
-      },
+      data: { ...babyDto, image: url },
     });
-    return { user, message: 'deleted baby successfully' };
+    return { baby, message: 'updated babies successfully' };
   }
-  async updateBaby(baby: UpdateBabyListDto, req) {
-    const user = await this.prisma.users.update({
-      where: {
-        id: req.user.id,
-      },
-      data: {
-        baby: baby.baby,
-      },
+  async addMedicalDocument(addMedicalDto: AddMedicalDto, id: string, images) {
+    const url = images ? await this.uploadImage(images[0].buffer) : null;
+    const baby = await this.prisma.medicalHistory.create({
+      data: { ...addMedicalDto, babyId: id, document: url },
     });
-    return { user, message: 'updated babies successfully' };
+    return { message: 'added medical document successfully', baby };
+  }
+  async updateMedicalDocument(
+    updateMedicalDto: UpdateMedicalDto,
+    id: string,
+    images,
+  ) {
+    const imageToDelete = await this.prisma.medicalHistory.findUnique({
+      where: { id },
+    });
+    const publicId = imageToDelete.document.split('/').pop().split('.')[0];
+    await cloudinary.uploader.destroy(publicId, (error) => {
+      if (error) {
+        console.error(error);
+      }
+    });
+    const url = images ? await this.uploadImage(images[0].buffer) : null;
+    const baby = await this.prisma.medicalHistory.update({
+      where: { id },
+      data: { ...updateMedicalDto, document: url },
+    });
+    return { message: 'updated medical document successfully', baby };
+  }
+  async deleteMedicalDocument(id: string) {
+    const imageToDelete = await this.prisma.medicalHistory.findUnique({
+      where: { id },
+    });
+    const publicId = imageToDelete.document.split('/').pop().split('.')[0];
+    await cloudinary.uploader.destroy(publicId, (error) => {
+      if (error) {
+        console.error(error);
+      }
+    });
+    await this.prisma.medicalHistory.delete({
+      where: { id },
+    });
+    return { message: 'medical record deleted successfully' };
+  }
+  async allDocuments(babyId: string) {
+    const medicalHistory = await this.prisma.medicalHistory.findMany({
+      where: { babyId },
+    });
+    return { message: 'all medical history', medicalHistory };
+  }
+  async medicalDocumentById(babyId: string, id: string) {
+    const medicalDocument = await this.prisma.medicalHistory.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'all medical history', medicalDocument };
+  }
+  async addActivity(addActivityDto: AddActivityDto, id: string) {
+    const activity = await this.prisma.activities.create({
+      data: { ...addActivityDto, babyId: id },
+    });
+    return { message: 'added new activity successfully', activity };
+  }
+  async updateActivity(updateActivityDto: UpdateActivityDto, id: string) {
+    const activity = await this.prisma.activities.update({
+      where: { id },
+      data: updateActivityDto,
+    });
+    return { message: 'updated Activity sucessfully', activity };
+  }
+  async deleteActivity(id: string) {
+    await this.prisma.activities.delete({
+      where: { id },
+    });
+    return { message: 'deleted Activity' };
+  }
+  async allActivities(babyId: string) {
+    const activities = await this.prisma.activities.findMany({
+      where: { babyId },
+    });
+    return { message: 'all activities retrieved successfully', activities };
+  }
+  async activityById(babyId: string, id: string) {
+    const activity = await this.prisma.activities.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'retrieved activity successfully', activity };
+  }
+  async addMeal(addFeedingDto: AddFeedingDto, id: string) {
+    const meal = await this.prisma.feeding.create({
+      data: { ...addFeedingDto, babyId: id },
+    });
+    return { message: 'added meal successfully', meal };
+  }
+  async updateMeal(updateMealDto: UpdateFeedingDto, id: string) {
+    const meal = await this.prisma.feeding.update({
+      where: { id },
+      data: updateMealDto,
+    });
+    return { message: 'meal updated successfully', meal };
+  }
+  async deleteMeal(id: string) {
+    await this.prisma.feeding.delete({ where: { id } });
+    return { message: 'meal deleted successfully' };
+  }
+  async allMeals(babyId: string) {
+    const meals = await this.prisma.feeding.findMany({
+      where: { babyId },
+    });
+    return { message: 'all meals retrieved successfully', meals };
+  }
+  async mealById(babyId: string, id: string) {
+    const meal = await this.prisma.feeding.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'retrieved meal successfully', meal };
+  }
+  async addGrowth(addGrowthDto: AddGrowthDto, id: string) {
+    const meal = await this.prisma.growth.create({
+      data: { ...addGrowthDto, babyId: id },
+    });
+    return { message: 'added growth milestone successfully', meal };
+  }
+  async updateGrowth(updateGrowthDto: updateGrowthDto, id: string) {
+    const meal = await this.prisma.growth.update({
+      where: { id },
+      data: updateGrowthDto,
+    });
+    return { message: 'growth milestone updated successfully', meal };
+  }
+  async deleteGrowth(id: string) {
+    await this.prisma.growth.delete({ where: { id } });
+    return { message: 'growth milestone deleted successfully' };
+  }
+  async allGrowth(babyId: string) {
+    const meals = await this.prisma.growth.findMany({
+      where: { babyId },
+    });
+    return { message: 'all growth milestones retrieved successfully', meals };
+  }
+  async growthById(babyId: string, id: string) {
+    const meal = await this.prisma.growth.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'retrieved growth milestone successfully', meal };
+  }
+  async addFirst(addFirstDto: AddFirstDto, id: string) {
+    const first = await this.prisma.firsts.create({
+      data: { ...addFirstDto, babyId: id },
+    });
+    return { message: 'added first successfully', first };
+  }
+  async updateFirst(updateFirstDto: UpdateFirstDto, id: string) {
+    const first = await this.prisma.firsts.update({
+      where: { id },
+      data: updateFirstDto,
+    });
+    return { message: 'first updated successfully', first };
+  }
+  async deleteFirst(id: string) {
+    await this.prisma.firsts.delete({ where: { id } });
+    return { message: 'first deleted successfully' };
+  }
+  async allFirsts(babyId: string) {
+    const firsts = await this.prisma.firsts.findMany({
+      where: { babyId },
+    });
+    return { message: 'all firsts retrieved successfully', firsts };
+  }
+  async firstById(babyId: string, id: string) {
+    const first = await this.prisma.firsts.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'retrieved first successfully', first };
+  }
+  async addReminder(addReminderDto: AddReminderDto, id: string) {
+    const reminder = await this.prisma.reminders.create({
+      data: { ...addReminderDto, babyId: id },
+    });
+    return { message: 'added reminder successfully', reminder };
+  }
+  async updateReminder(updateReminderDto: UpdateReminderDto, id: string) {
+    const reminder = await this.prisma.reminders.update({
+      where: { id },
+      data: updateReminderDto,
+    });
+    return { message: 'reminder updated successfully', reminder };
+  }
+  async deleteReminder(id: string) {
+    await this.prisma.reminders.delete({ where: { id } });
+    return { message: 'reminder deleted successfully' };
+  }
+  async allReminders(babyId: string) {
+    const reminders = await this.prisma.reminders.findMany({
+      where: { babyId },
+    });
+    return { message: 'all reminders retrieved successfully', reminders };
+  }
+  async reminderById(babyId: string, id: string) {
+    const reminder = await this.prisma.reminders.findFirst({
+      where: { babyId, id },
+    });
+    return { message: 'retrieved reminder successfully', reminder };
   }
 }

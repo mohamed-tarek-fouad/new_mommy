@@ -19,6 +19,7 @@ import { UpdateUserDto } from './dtos/updateUser.dto';
 import { ConfigService } from '@nestjs/config';
 import { AuthDto } from './dtos/auth.dto';
 import { JwtPayload, Tokens } from './types';
+import { Twilio } from 'twilio';
 @Injectable()
 export class AuthService {
   constructor(
@@ -45,7 +46,7 @@ export class AuthService {
     const tokens = await this.getTokens(user.id, user.email, user.role);
     await this.updateRtHash(user.id, tokens.refresh_token);
     delete user.password;
-    return { ...tokens, message: 'loged in successfully', user };
+    return { ...tokens, message: 'loged in successfully', ...user };
   }
   async register(userDto: CreateUserDto) {
     const userExist = await this.prisma.users.findUnique({
@@ -66,7 +67,7 @@ export class AuthService {
     await this.updateRtHash(user.id, tokens.refresh_token);
     return {
       ...user,
-      tokens,
+      ...tokens,
       message: 'Account has been created successfully',
     };
   }
@@ -249,6 +250,73 @@ export class AuthService {
     // await this.cacheManager.del('users');
     // await this.cacheManager.del(`user${id}`);
     return { ...updatedUser, message: 'user updated successfully' };
+  }
+  async verifyPhoneNumber(req) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: req.user.id },
+    });
+    const client = new Twilio(
+      this.config.get<string>('TWILIO_ACCOUNT_SID'),
+      this.config.get<string>('TWILIO_AUTHTOKEN'),
+    );
+    const fourDigits = Math.floor(Math.random() * 9000) + 1000;
+
+    const secret = process.env.ACCESS_SECRET;
+    const token = this.jwtServise.sign(
+      { code: fourDigits },
+      {
+        secret,
+        expiresIn: 60 * 15,
+      },
+    );
+    await this.prisma.users.update({
+      where: { id: req.user.id },
+      data: {
+        phoneNumberVerifiaction: token,
+      },
+    });
+    try {
+      await client.messages.create({
+        body: `Verification Code Is : ${fourDigits}`,
+        from: this.config.get<string>('TWILIO_NUMBER'),
+        to: user.phoneNumber,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    return { message: 'verification code sent successfully' };
+  }
+  async verifyResetEmailToken(req, token: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: req.user.id },
+    });
+    const secret = process.env.ACCESS_SECRET;
+    const payload = await this.jwtServise.verify(user.phoneNumberVerifiaction, {
+      secret,
+    });
+    if (payload.code != token) {
+      throw new HttpException("user doesn't exist", HttpStatus.BAD_REQUEST);
+    }
+    return { message: 'valid numbers reset email now' };
+  }
+  async newEmail(resetEmailDto, token, req) {
+    const user = await this.prisma.users.findUnique({
+      where: { id: req.user.id },
+    });
+    const secret = process.env.ACCESS_SECRET;
+    const payload = await this.jwtServise.verify(user.phoneNumberVerifiaction, {
+      secret,
+    });
+    if (payload.code != token) {
+      throw new HttpException("user doesn't exist", HttpStatus.BAD_REQUEST);
+    }
+    const updatedEmail = await this.prisma.users.update({
+      where: { id: req.user.id },
+      data: {
+        email: resetEmailDto,
+      },
+    });
+    return { message: 'Email Reseted Successfully', updatedEmail };
   }
   async googleLogin(req) {
     const { name, emails, photos } = await req.user;

@@ -2,7 +2,9 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
+  IsPositive,
   Matches,
+  Max,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -28,6 +30,7 @@ export class BabyDto {
 
   @IsNotEmpty()
   @IsOptional()
-  @MaxLength(2)
+  @IsPositive()
+  @Max(99)
   weight: number;
 }

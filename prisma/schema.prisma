@@ -11,40 +11,109 @@ datasource db {
 }
 
 model Users {
-  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
-  firstname           String?
-  lastname            String?
-  email               String              @unique
-  password            String?
-  phoneNumber         String?
-  birthDate           String?
-  address             Address?
-  hashedRt            String?
-  picture             String?
-  role                UserRole            @default(user)
-  provider            Provider?
-  baby                Baby[]
-  resetPasswordDigits String?
-  NotificationToken   NotificationToken[]
+  id                      String    @id @default(auto()) @map("_id") @db.ObjectId
+  firstname               String?
+  lastname                String?
+  email                   String    @unique
+  password                String?
+  phoneNumber             String?
+  birthDate               String?
+  address                 Address?
+  hashedRt                String?
+  picture                 String?
+  role                    UserRole  @default(user)
+  provider                Provider?
+  baby                    Baby[]
+  resetPasswordDigits     String?
+  phoneNumberVerifiaction String?
 }
 
-model Notification {
-  id                  String             @id @default(auto()) @map("_id") @db.ObjectId
-  title               String
-  body                String
-  status              NotificationStatus @default(active)
-  notificationToken   NotificationToken  @relation(fields: [notificationTokenId], references: [id])
-  notificationTokenId String             @db.ObjectId
+model Baby {
+  id             String           @id @default(auto()) @map("_id") @db.ObjectId
+  babyName       String
+  gender         Gender
+  birthDate      String
+  weight         Float?
+  image          String?
+  vacinations    Vacinations?
+  Users          Users            @relation(fields: [usersId], references: [id])
+  usersId        String           @db.ObjectId
+  activities     Activities[]
+  Feeding        Feeding[]
+  Growth         Growth[]
+  Firsts         Firsts[]
+  Reminders      Reminders[]
+  medicalHistory MedicalHistory[]
 }
 
-model NotificationToken {
-  id                String             @id @default(auto()) @map("_id") @db.ObjectId
-  user              Users              @relation(fields: [usersId], references: [id])
-  usersId           String             @db.ObjectId
-  deviceType        String
-  notificationToken String
-  status            NotificationStatus @default(active)
-  Notification      Notification[]
+model Activities {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  activity String
+  date     String
+  time     String
+  note     String
+  Baby     Baby   @relation(fields: [babyId], references: [id])
+  babyId   String @db.ObjectId
+}
+
+model Feeding {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  food   String
+  time   String
+  date   String
+  note   String
+  Baby   Baby   @relation(fields: [babyId], references: [id])
+  babyId String @db.ObjectId
+}
+
+model Growth {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  date   String
+  weight String
+  height String
+  age    String
+  Baby   Baby   @relation(fields: [babyId], references: [id])
+  babyId String @db.ObjectId
+}
+
+model Firsts {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  date      String
+  babyFirst String
+  note      String
+  Baby      Baby   @relation(fields: [babyId], references: [id])
+  babyId    String @db.ObjectId
+}
+
+model Reminders {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  time   String
+  date   String
+  note   String
+  Baby   Baby   @relation(fields: [babyId], references: [id])
+  babyId String @db.ObjectId
+}
+
+model MedicalHistory {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  document   String?
+  date       String
+  doctorName String
+  diagnosis  String
+  age        String
+  Baby       Baby    @relation(fields: [babyId], references: [id])
+  babyId     String  @db.ObjectId
+}
+
+type Vacinations {
+  vacin1 Vacin
+  vacin2 Vacin
+  vacin3 Vacin
+}
+
+type Vacin {
+  age       String
+  vacinated Boolean @default(false)
 }
 
 type Address {
@@ -60,14 +129,6 @@ enum UserRole {
 enum Provider {
   google
   facebook
-}
-
-type Baby {
-  babyName  String
-  gender    Gender
-  birthDate String
-  weight    Float?
-  image     String?
 }
 
 enum Gender {

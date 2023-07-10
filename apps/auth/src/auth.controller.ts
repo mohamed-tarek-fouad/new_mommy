@@ -73,7 +73,22 @@ export class AuthController {
   ) {
     return this.authService.refreshTokens(userId, refreshToken);
   }
-
+  @Post('verifyPhoneNumber')
+  verifyPhoneNumber(@Req() req) {
+    return this.authService.verifyPhoneNumber(req);
+  }
+  @Post('resetEmailDigits')
+  verifyResetEmailToken(@Req() req, @Param('token') token: string) {
+    return this.authService.verifyResetEmailToken(req, token);
+  }
+  @Post('newEmail/:token')
+  newEmail(
+    @Body() resetEmailDto: ForgetPasswordDto,
+    @Param('token') token: string,
+    @Req() req,
+  ) {
+    return this.authService.newEmail(resetEmailDto, token, req);
+  }
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req) {
