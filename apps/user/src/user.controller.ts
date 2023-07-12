@@ -95,7 +95,7 @@ export class UserController {
   ) {
     return this.usersService.addMedicalDocument(addMedicaltDto, id, images);
   }
-  @Post('updateMedicalDocument/:id')
+  @Patch('updateMedicalDocument/:id')
   @UseInterceptors(
     FilesInterceptor('images', 1, {
       preservePath: true,
@@ -216,7 +216,7 @@ export class UserController {
   ) {
     return this.usersService.updateFirst(updateFirstDto, id);
   }
-  @Delete('First/:id')
+  @Delete('first/:id')
   deleteFirst(@Param('id') id: string) {
     return this.usersService.deleteFirst(id);
   }
@@ -239,7 +239,7 @@ export class UserController {
   ) {
     return this.usersService.updateReminder(updateReminderDto, id);
   }
-  @Delete('Reminder/:id')
+  @Delete('reminder/:id')
   deleteReminder(@Param('id') id: string) {
     return this.usersService.deleteReminder(id);
   }

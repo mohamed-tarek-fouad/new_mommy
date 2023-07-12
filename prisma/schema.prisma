@@ -69,8 +69,8 @@ model Feeding {
 model Growth {
   id     String @id @default(auto()) @map("_id") @db.ObjectId
   date   String
-  weight String
-  height String
+  weight Float
+  height Float
   age    String
   Baby   Baby   @relation(fields: [babyId], references: [id])
   babyId String @db.ObjectId

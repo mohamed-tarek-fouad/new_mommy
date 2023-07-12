@@ -1,16 +1,22 @@
-import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumberString,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 
 export class AddGrowthDto {
   @Matches(/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[1-2][0-9]|3[0-1])$/)
   @IsNotEmpty()
   date: string;
-  @IsString()
-  @MaxLength(10)
   @IsNotEmpty()
+  @MaxLength(2)
+  @IsNumberString()
   weight: string;
-  @IsString()
-  @MaxLength(10)
   @IsNotEmpty()
+  @MaxLength(2)
+  @IsNumberString()
   height: string;
   @IsString()
   @MaxLength(10)

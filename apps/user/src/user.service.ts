@@ -105,7 +105,12 @@ export class UserService {
 
     const url = image ? await this.uploadImage(image[0].buffer) : null;
     const user = await this.prisma.baby.create({
-      data: { ...babyDto, image: url, usersId: req.user.id },
+      data: {
+        ...babyDto,
+        image: url,
+        usersId: req.user.id,
+        weight: parseInt(babyDto.weight),
+      },
     });
     return { user, message: 'updated babies successfully' };
   }
@@ -138,10 +143,10 @@ export class UserService {
   }
   async addMedicalDocument(addMedicalDto: AddMedicalDto, id: string, images) {
     const url = images ? await this.uploadImage(images[0].buffer) : null;
-    const baby = await this.prisma.medicalHistory.create({
+    const medicalDocument = await this.prisma.medicalHistory.create({
       data: { ...addMedicalDto, babyId: id, document: url },
     });
-    return { message: 'added medical document successfully', baby };
+    return { message: 'added medical document successfully', medicalDocument };
   }
   async updateMedicalDocument(
     updateMedicalDto: UpdateMedicalDto,
@@ -158,11 +163,11 @@ export class UserService {
       }
     });
     const url = images ? await this.uploadImage(images[0].buffer) : null;
-    const baby = await this.prisma.medicalHistory.update({
+    const document = await this.prisma.medicalHistory.update({
       where: { id },
       data: { ...updateMedicalDto, document: url },
     });
-    return { message: 'updated medical document successfully', baby };
+    return { message: 'updated medical document successfully', document };
   }
   async deleteMedicalDocument(id: string) {
     const imageToDelete = await this.prisma.medicalHistory.findUnique({
@@ -252,33 +257,51 @@ export class UserService {
     return { message: 'retrieved meal successfully', meal };
   }
   async addGrowth(addGrowthDto: AddGrowthDto, id: string) {
-    const meal = await this.prisma.growth.create({
-      data: { ...addGrowthDto, babyId: id },
+    const growthMilestone = await this.prisma.growth.create({
+      data: {
+        ...addGrowthDto,
+        babyId: id,
+        height: parseInt(addGrowthDto.height),
+        weight: parseInt(addGrowthDto.weight),
+      },
     });
-    return { message: 'added growth milestone successfully', meal };
+    return { message: 'added growth milestone successfully', growthMilestone };
   }
   async updateGrowth(updateGrowthDto: updateGrowthDto, id: string) {
-    const meal = await this.prisma.growth.update({
+    const growthMilestone = await this.prisma.growth.update({
       where: { id },
-      data: updateGrowthDto,
+      data: {
+        ...updateGrowthDto,
+        height: parseInt(updateGrowthDto.height),
+        weight: parseInt(updateGrowthDto.weight),
+      },
     });
-    return { message: 'growth milestone updated successfully', meal };
+    return {
+      message: 'growth milestone updated successfully',
+      growthMilestone,
+    };
   }
   async deleteGrowth(id: string) {
     await this.prisma.growth.delete({ where: { id } });
     return { message: 'growth milestone deleted successfully' };
   }
   async allGrowth(babyId: string) {
-    const meals = await this.prisma.growth.findMany({
+    const growthMilestones = await this.prisma.growth.findMany({
       where: { babyId },
     });
-    return { message: 'all growth milestones retrieved successfully', meals };
+    return {
+      message: 'all growth milestones retrieved successfully',
+      growthMilestones,
+    };
   }
   async growthById(babyId: string, id: string) {
-    const meal = await this.prisma.growth.findFirst({
+    const growthMilestone = await this.prisma.growth.findFirst({
       where: { babyId, id },
     });
-    return { message: 'retrieved growth milestone successfully', meal };
+    return {
+      message: 'retrieved growth milestone successfully',
+      growthMilestone,
+    };
   }
   async addFirst(addFirstDto: AddFirstDto, id: string) {
     const first = await this.prisma.firsts.create({
