@@ -11,11 +11,11 @@ export class AddGrowthDto {
   @IsNotEmpty()
   date: string;
   @IsNotEmpty()
-  @MaxLength(2)
+  @MaxLength(3)
   @IsNumberString()
   weight: string;
   @IsNotEmpty()
-  @MaxLength(2)
+  @MaxLength(4)
   @IsNumberString()
   height: string;
   @IsString()

@@ -27,4 +27,18 @@ services:
       - /usr/src/app/node_modules
     ports:
       - '3002:3002'
+
+  # community:
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/community/Dockerfile
+  #     target: development
+  #   command: npm run start:dev community
+  #   env_file:
+  #     - ./apps/community/.env
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   ports:
+  #     - '3003:3003'
   

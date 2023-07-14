@@ -109,7 +109,7 @@ export class UserService {
         ...babyDto,
         image: url,
         usersId: req.user.id,
-        weight: parseInt(babyDto.weight),
+        weight: babyDto.weight ? parseInt(babyDto.weight) : null,
       },
     });
     return { user, message: 'updated babies successfully' };
@@ -132,14 +132,18 @@ export class UserService {
         console.error(error);
       }
     });
-    const baby = await this.prisma.baby.updateMany({
+    await this.prisma.baby.updateMany({
       where: {
         id,
         usersId: req.user.id,
       },
-      data: { ...babyDto, image: url },
+      data: {
+        ...babyDto,
+        image: url,
+        weight: babyDto.weight ? parseInt(babyDto.weight) : null,
+      },
     });
-    return { baby, message: 'updated babies successfully' };
+    return { message: 'updated babies successfully' };
   }
   async addMedicalDocument(addMedicalDto: AddMedicalDto, id: string, images) {
     const url = images ? await this.uploadImage(images[0].buffer) : null;
@@ -272,8 +276,12 @@ export class UserService {
       where: { id },
       data: {
         ...updateGrowthDto,
-        height: parseInt(updateGrowthDto.height),
-        weight: parseInt(updateGrowthDto.weight),
+        height: updateGrowthDto.height
+          ? parseInt(updateGrowthDto.height)
+          : null,
+        weight: updateGrowthDto.weight
+          ? parseInt(updateGrowthDto.weight)
+          : null,
       },
     });
     return {

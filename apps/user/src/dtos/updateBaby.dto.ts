@@ -1,6 +1,7 @@
 import {
   IsEnum,
   IsNotEmpty,
+  IsNumberString,
   IsOptional,
   IsPositive,
   Matches,
@@ -33,7 +34,7 @@ export class UpdateBabyDto {
 
   @IsNotEmpty()
   @IsOptional()
-  @IsPositive()
-  @Max(99)
-  weight: number;
+  @MaxLength(2)
+  @IsNumberString()
+  weight: string;
 }

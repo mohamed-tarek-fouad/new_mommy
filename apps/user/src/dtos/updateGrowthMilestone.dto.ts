@@ -12,12 +12,12 @@ export class updateGrowthDto {
   @IsOptional()
   date: string;
   @IsString()
-  @MaxLength(10)
+  @MaxLength(3)
   @IsNotEmpty()
   @IsOptional()
   weight: string;
   @IsString()
-  @MaxLength(10)
+  @MaxLength(4)
   @IsNotEmpty()
   @IsOptional()
   height: string;

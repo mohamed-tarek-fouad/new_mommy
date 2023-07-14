@@ -11,21 +11,28 @@ datasource db {
 }
 
 model Users {
-  id                      String    @id @default(auto()) @map("_id") @db.ObjectId
+  id                      String          @id @default(auto()) @map("_id") @db.ObjectId
   firstname               String?
   lastname                String?
-  email                   String    @unique
+  email                   String          @unique
   password                String?
   phoneNumber             String?
   birthDate               String?
   address                 Address?
   hashedRt                String?
   picture                 String?
-  role                    UserRole  @default(user)
+  role                    UserRole        @default(user)
   provider                Provider?
   baby                    Baby[]
   resetPasswordDigits     String?
   phoneNumberVerifiaction String?
+  user1                   FriendRequest[] @relation("user1")
+  user2                   FriendRequest[] @relation("user2")
+  freind1                 freinds[]       @relation("friend1")
+  freind2                 freinds[]       @relation("friend2")
+  UserGroup               UserGroup[]
+  Posts                   Posts[]
+  likes                   likes[]
 }
 
 model Baby {
@@ -105,6 +112,55 @@ model MedicalHistory {
   babyId     String  @db.ObjectId
 }
 
+model FriendRequest {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  user1Id String @db.ObjectId
+  user1   Users  @relation(fields: [user1Id], references: [id], name: "user1")
+  user2Id String @db.ObjectId
+  user2   Users  @relation(fields: [user2Id], references: [id], name: "user2")
+}
+
+model freinds {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  friend1Id String @db.ObjectId
+  friend1   Users  @relation(fields: [friend1Id], references: [id], name: "friend1")
+  friend2Id String @db.ObjectId
+  friend2   Users  @relation(fields: [friend2Id], references: [id], name: "friend2")
+}
+
+model Groups {
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
+  groupName String
+  groupType GroupType
+  UserGroup UserGroup[]
+}
+
+model UserGroup {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  Users   Users  @relation(fields: [usersId], references: [id])
+  usersId String @db.ObjectId
+  group   Groups @relation(fields: [groupId], references: [id])
+  groupId String @db.ObjectId
+}
+
+model Posts {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  Users   Users   @relation(fields: [usersId], references: [id])
+  usersId String  @db.ObjectId
+  caption String?
+  image   String?
+  video   String?
+  likes   likes[]
+}
+
+model likes {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  Users   Users  @relation(fields: [usersId], references: [id])
+  usersId String @db.ObjectId
+  likes   Posts  @relation(fields: [likesId], references: [id])
+  likesId String @db.ObjectId
+}
+
 type Vacinations {
   vacin1 Vacin
   vacin2 Vacin
@@ -139,4 +195,9 @@ enum Gender {
 enum NotificationStatus {
   active
   inactive
+}
+
+enum GroupType {
+  public
+  private
 }
