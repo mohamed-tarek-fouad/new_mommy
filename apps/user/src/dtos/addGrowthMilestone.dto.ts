@@ -1,7 +1,6 @@
 import {
   IsNotEmpty,
   IsNumberString,
-  IsString,
   Matches,
   MaxLength,
 } from 'class-validator';
@@ -18,8 +17,4 @@ export class AddGrowthDto {
   @MaxLength(4)
   @IsNumberString()
   height: string;
-  @IsString()
-  @MaxLength(10)
-  @IsNotEmpty()
-  age: string;
 }

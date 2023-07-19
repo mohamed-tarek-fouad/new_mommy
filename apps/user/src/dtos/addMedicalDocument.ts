@@ -10,7 +10,4 @@ export class AddMedicalDto {
   @IsString()
   @MaxLength(30)
   diagnosis: string;
-  @IsString()
-  @MaxLength(30)
-  age: string;
 }

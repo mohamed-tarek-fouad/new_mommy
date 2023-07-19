@@ -21,9 +21,4 @@ export class updateGrowthDto {
   @IsNotEmpty()
   @IsOptional()
   height: string;
-  @IsString()
-  @MaxLength(10)
-  @IsNotEmpty()
-  @IsOptional()
-  age: string;
 }

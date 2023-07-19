@@ -8,6 +8,7 @@ import {
   Patch,
   UseGuards,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ClientProxy } from '@nestjs/microservices/client';
@@ -19,6 +20,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ResetPasswordDto } from './dtos/resetPassword.dto';
 import { ForgetPasswordDto } from './dtos/forgetPassword.dto';
 import { CreateUserDto } from './dtos/createUser.dto';
+import { DeleteAccountDto } from './dtos/deleteAccount.dto';
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -89,14 +91,20 @@ export class AuthController {
   ) {
     return this.authService.newEmail(resetEmailDto, token, req);
   }
+  @Public()
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req) {
     return this.authService.googleLogin(req);
   }
+  @Public()
   @Get('facebook/redirect')
   @UseGuards(AuthGuard('facebook'))
   facebookAuthRedirect(@Req() req) {
     return this.authService.facebookLogin(req);
+  }
+  @Delete()
+  deleteAccount(deleteAccountDto: DeleteAccountDto, @Req() req) {
+    return this.authService.deleteAccount(deleteAccountDto, req);
   }
 }

@@ -20,6 +20,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthDto } from './dtos/auth.dto';
 import { JwtPayload, Tokens } from './types';
 import { Twilio } from 'twilio';
+import { DeleteAccountDto } from './dtos/deleteAccount.dto';
 @Injectable()
 export class AuthService {
   constructor(
@@ -32,6 +33,9 @@ export class AuthService {
     const user = await this.prisma.users.findUnique({
       where: {
         email: dto.email,
+      },
+      include: {
+        baby: true,
       },
     });
     if (!user)
@@ -122,11 +126,11 @@ export class AuthService {
     const [at, rt] = await Promise.all([
       this.jwtServise.signAsync(jwtPayload, {
         secret: this.config.get<string>('AT_SECRET'),
-        expiresIn: '60m',
+        expiresIn: '15m',
       }),
       this.jwtServise.signAsync(jwtPayload, {
         secret: this.config.get<string>('RT_SECRET'),
-        expiresIn: '7d',
+        expiresIn: '30d',
       }),
     ]);
 
@@ -229,6 +233,9 @@ export class AuthService {
         password: resetPasswordDto.password,
         resetPasswordDigits: null,
       },
+      include: {
+        baby: true,
+      },
     });
     delete user.password;
     return { ...user, message: 'reset password successfully' };
@@ -246,6 +253,9 @@ export class AuthService {
     const updatedUser = await this.prisma.users.update({
       where: { id: req.user.id },
       data: updateUserDto,
+      include: {
+        baby: true,
+      },
     });
     // await this.cacheManager.del('users');
     // await this.cacheManager.del(`user${id}`);
@@ -344,9 +354,9 @@ export class AuthService {
         },
       });
       const jwtPayload = {
-        id: user.id,
+        id: newUserWitoutRt.id,
         email: email,
-        role: user.role,
+        role: newUserWitoutRt.role,
       };
       const [at, rt] = await Promise.all([
         this.jwtServise.signAsync(jwtPayload, {
@@ -355,7 +365,7 @@ export class AuthService {
         }),
         this.jwtServise.signAsync(jwtPayload, {
           secret: this.config.get<string>('RT_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '30d',
         }),
       ]);
 
@@ -409,7 +419,7 @@ export class AuthService {
         }),
         this.jwtServise.signAsync(jwtPayload, {
           secret: this.config.get<string>('RT_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '30d',
         }),
       ]);
 
@@ -424,5 +434,14 @@ export class AuthService {
       });
       return { newUser, accessToken: at, refreshToken: rt };
     }
+  }
+  async deleteAccount(deleteAccountDto: DeleteAccountDto, req) {
+    await this.prisma.users.delete({
+      where: { id: req.user.id },
+    });
+    await this.prisma.deleteAccountReasons.create({
+      data: deleteAccountDto,
+    });
+    return { message: 'Deleted Account Successfully' };
   }
 }

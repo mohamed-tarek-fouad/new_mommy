@@ -11,46 +11,55 @@ datasource db {
 }
 
 model Users {
-  id                      String          @id @default(auto()) @map("_id") @db.ObjectId
+  id                      String             @id @default(auto()) @map("_id") @db.ObjectId
   firstname               String?
   lastname                String?
-  email                   String          @unique
+  email                   String             @unique
   password                String?
   phoneNumber             String?
   birthDate               String?
   address                 Address?
   hashedRt                String?
   picture                 String?
-  role                    UserRole        @default(user)
+  role                    UserRole           @default(user)
   provider                Provider?
   baby                    Baby[]
   resetPasswordDigits     String?
   phoneNumberVerifiaction String?
-  user1                   FriendRequest[] @relation("user1")
-  user2                   FriendRequest[] @relation("user2")
-  freind1                 freinds[]       @relation("friend1")
-  freind2                 freinds[]       @relation("friend2")
+  user1                   FriendRequest[]    @relation("user1")
+  user2                   FriendRequest[]    @relation("user2")
+  friend1                 Friends[]          @relation("friend1")
+  friend2                 Friends[]          @relation("friend2")
   UserGroup               UserGroup[]
   Posts                   Posts[]
-  likes                   likes[]
+  likes                   Likes[]
+  comments                Comments[]
+  MedicalDocuments        MedicalDocuments[]
+  MedicalHistory          MedicalHistory[]
+  Activities              Activities[]
+  Feeding                 Feeding[]
+  Growth                  Growth[]
+  Firsts                  Firsts[]
+  Reminders               Reminders[]
 }
 
 model Baby {
-  id             String           @id @default(auto()) @map("_id") @db.ObjectId
-  babyName       String
-  gender         Gender
-  birthDate      String
-  weight         Float?
-  image          String?
-  vacinations    Vacinations?
-  Users          Users            @relation(fields: [usersId], references: [id])
-  usersId        String           @db.ObjectId
-  activities     Activities[]
-  Feeding        Feeding[]
-  Growth         Growth[]
-  Firsts         Firsts[]
-  Reminders      Reminders[]
-  medicalHistory MedicalHistory[]
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  babyName         String
+  gender           Gender
+  birthDate        String
+  weight           Float?
+  image            String?
+  vacinations      Vacinations?
+  Users            Users              @relation(fields: [usersId], references: [id])
+  usersId          String             @db.ObjectId
+  activities       Activities[]
+  Feeding          Feeding[]
+  Growth           Growth[]
+  Firsts           Firsts[]
+  Reminders        Reminders[]
+  medicalHistory   MedicalHistory[]
+  MedicalDocuments MedicalDocuments[]
 }
 
 model Activities {
@@ -61,26 +70,32 @@ model Activities {
   note     String
   Baby     Baby   @relation(fields: [babyId], references: [id])
   babyId   String @db.ObjectId
+  Users    Users  @relation(fields: [usersId], references: [id])
+  usersId  String @db.ObjectId
 }
 
 model Feeding {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  food   String
-  time   String
-  date   String
-  note   String
-  Baby   Baby   @relation(fields: [babyId], references: [id])
-  babyId String @db.ObjectId
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  food    String
+  time    String
+  date    String
+  note    String
+  Baby    Baby   @relation(fields: [babyId], references: [id])
+  babyId  String @db.ObjectId
+  Users   Users  @relation(fields: [usersId], references: [id])
+  usersId String @db.ObjectId
 }
 
 model Growth {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  date   String
-  weight Float
-  height Float
-  age    String
-  Baby   Baby   @relation(fields: [babyId], references: [id])
-  babyId String @db.ObjectId
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  date    String
+  weight  Float
+  height  Float
+  Baby    Baby   @relation(fields: [babyId], references: [id])
+  babyId  String @db.ObjectId
+  age     String
+  Users   Users  @relation(fields: [usersId], references: [id])
+  usersId String @db.ObjectId
 }
 
 model Firsts {
@@ -90,26 +105,40 @@ model Firsts {
   note      String
   Baby      Baby   @relation(fields: [babyId], references: [id])
   babyId    String @db.ObjectId
+  Users     Users  @relation(fields: [usersId], references: [id])
+  usersId   String @db.ObjectId
 }
 
 model Reminders {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  time   String
-  date   String
-  note   String
-  Baby   Baby   @relation(fields: [babyId], references: [id])
-  babyId String @db.ObjectId
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  time    String
+  date    String
+  note    String
+  Baby    Baby   @relation(fields: [babyId], references: [id])
+  babyId  String @db.ObjectId
+  Users   Users  @relation(fields: [usersId], references: [id])
+  usersId String @db.ObjectId
 }
 
 model MedicalHistory {
-  id         String  @id @default(auto()) @map("_id") @db.ObjectId
-  document   String?
+  id         String @id @default(auto()) @map("_id") @db.ObjectId
   date       String
   doctorName String
   diagnosis  String
+  Baby       Baby   @relation(fields: [babyId], references: [id])
+  babyId     String @db.ObjectId
   age        String
-  Baby       Baby    @relation(fields: [babyId], references: [id])
-  babyId     String  @db.ObjectId
+  Users      Users  @relation(fields: [usersId], references: [id])
+  usersId    String @db.ObjectId
+}
+
+model MedicalDocuments {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  document String
+  Users    Users  @relation(fields: [usersId], references: [id])
+  usersId  String @db.ObjectId
+  Baby     Baby   @relation(fields: [babyId], references: [id])
+  babyId   String @db.ObjectId
 }
 
 model FriendRequest {
@@ -120,7 +149,7 @@ model FriendRequest {
   user2   Users  @relation(fields: [user2Id], references: [id], name: "user2")
 }
 
-model freinds {
+model Friends {
   id        String @id @default(auto()) @map("_id") @db.ObjectId
   friend1Id String @db.ObjectId
   friend1   Users  @relation(fields: [friend1Id], references: [id], name: "friend1")
@@ -144,21 +173,40 @@ model UserGroup {
 }
 
 model Posts {
-  id      String  @id @default(auto()) @map("_id") @db.ObjectId
-  Users   Users   @relation(fields: [usersId], references: [id])
-  usersId String  @db.ObjectId
-  caption String?
-  image   String?
-  video   String?
-  likes   likes[]
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
+  Users    Users      @relation(fields: [usersId], references: [id])
+  usersId  String     @db.ObjectId
+  caption  String?
+  image    String?
+  video    String?
+  likes    Likes[]
+  comments Comments[]
 }
 
-model likes {
+model Likes {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   Users   Users  @relation(fields: [usersId], references: [id])
   usersId String @db.ObjectId
-  likes   Posts  @relation(fields: [likesId], references: [id])
-  likesId String @db.ObjectId
+  post    Posts  @relation(fields: [postId], references: [id])
+  postId  String @db.ObjectId
+}
+
+model Comments {
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  comment   String
+  Users     Users      @relation(fields: [usersId], references: [id])
+  usersId   String     @db.ObjectId
+  post      Posts      @relation(fields: [postId], references: [id])
+  postId    String     @db.ObjectId
+  tags      String[]
+  replyTo   Comments?  @relation("replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replyToId String?    @db.ObjectId
+  replies   Comments[] @relation("replies")
+}
+
+model DeleteAccountReasons {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  reason String
 }
 
 type Vacinations {
