@@ -103,8 +103,8 @@ export class AuthController {
   facebookAuthRedirect(@Req() req) {
     return this.authService.facebookLogin(req);
   }
-  @Delete()
-  deleteAccount(deleteAccountDto: DeleteAccountDto, @Req() req) {
+  @Delete('deleteAccount')
+  deleteAccount(@Body() deleteAccountDto: DeleteAccountDto, @Req() req) {
     return this.authService.deleteAccount(deleteAccountDto, req);
   }
 }

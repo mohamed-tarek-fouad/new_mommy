@@ -51,7 +51,7 @@ model Baby {
   weight           Float?
   image            String?
   vacinations      Vacinations?
-  Users            Users              @relation(fields: [usersId], references: [id])
+  Users            Users              @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId          String             @db.ObjectId
   activities       Activities[]
   Feeding          Feeding[]
@@ -68,9 +68,9 @@ model Activities {
   date     String
   time     String
   note     String
-  Baby     Baby   @relation(fields: [babyId], references: [id])
+  Baby     Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId   String @db.ObjectId
-  Users    Users  @relation(fields: [usersId], references: [id])
+  Users    Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId  String @db.ObjectId
 }
 
@@ -80,9 +80,9 @@ model Feeding {
   time    String
   date    String
   note    String
-  Baby    Baby   @relation(fields: [babyId], references: [id])
+  Baby    Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId  String @db.ObjectId
-  Users   Users  @relation(fields: [usersId], references: [id])
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId String @db.ObjectId
 }
 
@@ -91,10 +91,10 @@ model Growth {
   date    String
   weight  Float
   height  Float
-  Baby    Baby   @relation(fields: [babyId], references: [id])
+  Baby    Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId  String @db.ObjectId
   age     String
-  Users   Users  @relation(fields: [usersId], references: [id])
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId String @db.ObjectId
 }
 
@@ -103,10 +103,11 @@ model Firsts {
   date      String
   babyFirst String
   note      String
-  Baby      Baby   @relation(fields: [babyId], references: [id])
+  Baby      Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId    String @db.ObjectId
-  Users     Users  @relation(fields: [usersId], references: [id])
+  Users     Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId   String @db.ObjectId
+  image     String
 }
 
 model Reminders {
@@ -114,9 +115,9 @@ model Reminders {
   time    String
   date    String
   note    String
-  Baby    Baby   @relation(fields: [babyId], references: [id])
+  Baby    Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId  String @db.ObjectId
-  Users   Users  @relation(fields: [usersId], references: [id])
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId String @db.ObjectId
 }
 
@@ -125,36 +126,37 @@ model MedicalHistory {
   date       String
   doctorName String
   diagnosis  String
-  Baby       Baby   @relation(fields: [babyId], references: [id])
+  Baby       Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId     String @db.ObjectId
   age        String
-  Users      Users  @relation(fields: [usersId], references: [id])
+  Users      Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId    String @db.ObjectId
 }
 
 model MedicalDocuments {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
   document String
-  Users    Users  @relation(fields: [usersId], references: [id])
+  Users    Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId  String @db.ObjectId
-  Baby     Baby   @relation(fields: [babyId], references: [id])
+  Baby     Baby   @relation(fields: [babyId], references: [id], onDelete: Cascade)
   babyId   String @db.ObjectId
 }
 
 model FriendRequest {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
   user1Id String @db.ObjectId
-  user1   Users  @relation(fields: [user1Id], references: [id], name: "user1")
+  user1   Users  @relation(fields: [user1Id], references: [id], name: "user1", onDelete: Cascade)
   user2Id String @db.ObjectId
-  user2   Users  @relation(fields: [user2Id], references: [id], name: "user2")
+  user2   Users  @relation(fields: [user2Id], references: [id], name: "user2", onDelete: Cascade)
 }
 
 model Friends {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  friend1Id String @db.ObjectId
-  friend1   Users  @relation(fields: [friend1Id], references: [id], name: "friend1")
-  friend2Id String @db.ObjectId
-  friend2   Users  @relation(fields: [friend2Id], references: [id], name: "friend2")
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  friend1Id String     @db.ObjectId
+  friend1   Users      @relation(fields: [friend1Id], references: [id], name: "friend1", onDelete: Cascade)
+  friend2Id String     @db.ObjectId
+  friend2   Users      @relation(fields: [friend2Id], references: [id], name: "friend2", onDelete: Cascade)
+  messages  messages[]
 }
 
 model Groups {
@@ -166,15 +168,15 @@ model Groups {
 
 model UserGroup {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
-  Users   Users  @relation(fields: [usersId], references: [id])
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId String @db.ObjectId
-  group   Groups @relation(fields: [groupId], references: [id])
+  group   Groups @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId String @db.ObjectId
 }
 
 model Posts {
   id       String     @id @default(auto()) @map("_id") @db.ObjectId
-  Users    Users      @relation(fields: [usersId], references: [id])
+  Users    Users      @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId  String     @db.ObjectId
   caption  String?
   image    String?
@@ -185,23 +187,31 @@ model Posts {
 
 model Likes {
   id      String @id @default(auto()) @map("_id") @db.ObjectId
-  Users   Users  @relation(fields: [usersId], references: [id])
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId String @db.ObjectId
-  post    Posts  @relation(fields: [postId], references: [id])
+  post    Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId  String @db.ObjectId
 }
 
 model Comments {
   id        String     @id @default(auto()) @map("_id") @db.ObjectId
   comment   String
-  Users     Users      @relation(fields: [usersId], references: [id])
+  Users     Users      @relation(fields: [usersId], references: [id], onDelete: Cascade)
   usersId   String     @db.ObjectId
-  post      Posts      @relation(fields: [postId], references: [id])
+  post      Posts      @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String     @db.ObjectId
   tags      String[]
   replyTo   Comments?  @relation("replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replyToId String?    @db.ObjectId
   replies   Comments[] @relation("replies")
+}
+
+model messages {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  message String
+  sender  String
+  room    Friends @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  roomId  String  @db.ObjectId
 }
 
 model DeleteAccountReasons {

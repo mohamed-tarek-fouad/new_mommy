@@ -34,11 +34,15 @@ export class CreateUserDto {
   @IsNotEmpty()
   @MaxLength(30)
   @MinLength(3)
-  @Matches(/^[a-zA-Z][a-zA-Z0-9]*$/)
+  @Matches(/^[\s]*[a-zA-Z][a-zA-Z0-9]*[\s]*$/, {
+    message: 'name cannot start with number',
+  })
   firstname: string;
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(30)
-  @Matches(/^[a-zA-Z][a-zA-Z0-9]*$/)
+  @Matches(/^[\s]*[a-zA-Z][a-zA-Z0-9]*[\s]*$/, {
+    message: 'name cannot start with number',
+  })
   lastname: string;
 }

@@ -182,13 +182,9 @@ export class UserController {
   allActivities(@Param('babyId') babyId: string, @Req() req) {
     return this.usersService.allActivities(babyId, req);
   }
-  @Get('activityById/:babyId/:id')
-  activitybyId(
-    @Param('babyId') babyId: string,
-    @Param('id') id: string,
-    @Req() req,
-  ) {
-    return this.usersService.activityById(babyId, id, req);
+  @Get('activityById/:id')
+  activitybyId(@Param('id') id: string, @Req() req) {
+    return this.usersService.activityById(id, req);
   }
   @Post('addMeal/:id')
   addMeal(
@@ -214,13 +210,9 @@ export class UserController {
   allMeals(@Param('babyId') babyId: string, @Req() req) {
     return this.usersService.allMeals(babyId, req);
   }
-  @Get('mealById/:babyId/:id')
-  mealbyId(
-    @Param('babyId') babyId: string,
-    @Param('id') id: string,
-    @Req() req,
-  ) {
-    return this.usersService.mealById(babyId, id, req);
+  @Get('mealById/:id')
+  mealbyId(@Param('id') id: string, @Req() req) {
+    return this.usersService.mealById(id, req);
   }
   @Post('addGrowthMilestone/:id')
   addGrowth(
@@ -246,29 +238,49 @@ export class UserController {
   allGrowth(@Param('babyId') babyId: string, @Req() req) {
     return this.usersService.allGrowth(babyId, req);
   }
-  @Get('growthMilestoneById/:babyId/:id')
-  growthMilestonebyId(
-    @Param('babyId') babyId: string,
-    @Param('id') id: string,
-    @Req() req,
-  ) {
-    return this.usersService.growthById(babyId, id, req);
+  @Get('growthMilestoneById/:id')
+  growthMilestonebyId(@Param('id') id: string, @Req() req) {
+    return this.usersService.growthById(id, req);
   }
+  @UseInterceptors(
+    FilesInterceptor('images', 1, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Post('addFirst/:id')
   addFirst(
     @Body() addFirstDto: AddFirstDto,
     @Param('id') id: string,
     @Req() req,
+    @UploadedFiles() images: any,
   ) {
-    return this.usersService.addFirst(addFirstDto, id, req);
+    return this.usersService.addFirst(addFirstDto, id, images, req);
   }
+  @UseInterceptors(
+    FilesInterceptor('images', 1, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image files are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Patch('updateFirst/:id')
   updateFirsts(
     @Body() updateFirstDto: UpdateFirstDto,
     @Param('id') id: string,
     @Req() req,
+    @UploadedFiles() images: any,
   ) {
-    return this.usersService.updateFirst(updateFirstDto, id, req);
+    return this.usersService.updateFirst(updateFirstDto, id, images, req);
   }
   @Delete('first/:id')
   deleteFirst(@Param('id') id: string, @Req() req) {
@@ -278,13 +290,9 @@ export class UserController {
   allFirsts(@Param('babyId') babyId: string, @Req() req) {
     return this.usersService.allFirsts(babyId, req);
   }
-  @Get('firstById/:babyId/:id')
-  firstbyId(
-    @Param('babyId') babyId: string,
-    @Param('id') id: string,
-    @Req() req,
-  ) {
-    return this.usersService.firstById(babyId, id, req);
+  @Get('firstById/:id')
+  firstbyId(@Param('id') id: string, @Req() req) {
+    return this.usersService.firstById(id, req);
   }
   @Post('addReminder/:id')
   addReminder(
@@ -310,12 +318,8 @@ export class UserController {
   allReminders(@Param('babyId') babyId: string, @Req() req) {
     return this.usersService.allReminders(babyId, req);
   }
-  @Get('reminderById/:babyId/:id')
-  reminderbyId(
-    @Param('babyId') babyId: string,
-    @Param('id') id: string,
-    @Req() req,
-  ) {
-    return this.usersService.reminderById(babyId, id, req);
+  @Get('reminderById/:id')
+  reminderbyId(@Param('id') id: string, @Req() req) {
+    return this.usersService.reminderById(id, req);
   }
 }

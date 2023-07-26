@@ -24,9 +24,15 @@ export class UpdateUserDto {
   @MinLength(3)
   @IsNotEmpty()
   @IsOptional()
+  @Matches(/^[\s]*[a-zA-Z][a-zA-Z0-9]*[\s]*$/, {
+    message: 'name cannot start with number',
+  })
   firstname: string;
 
   @IsNotEmpty()
+  @Matches(/^[\s]*[a-zA-Z][a-zA-Z0-9]*[\s]*$/, {
+    message: 'name cannot start with number',
+  })
   @IsOptional()
   @MinLength(3)
   lastname: string;
@@ -41,7 +47,9 @@ export class UpdateUserDto {
 
   @IsOptional()
   address: Address;
-  @Matches(/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[1-2][0-9]|3[0-1])$/)
+  @Matches(/^\d{4}-(0?[1-9]|1[0-2])-(0?[1-9]|[1-2][0-9]|3[0-1])$/, {
+    message: 'date must follow yyyy-mm-dd',
+  })
   @IsOptional()
   @IsNotEmpty()
   birthDate: string;
