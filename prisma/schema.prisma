@@ -148,6 +148,8 @@ model FriendRequest {
   user1   Users  @relation(fields: [user1Id], references: [id], name: "user1", onDelete: Cascade)
   user2Id String @db.ObjectId
   user2   Users  @relation(fields: [user2Id], references: [id], name: "user2", onDelete: Cascade)
+
+  @@unique([user1Id, user2Id])
 }
 
 model Friends {
@@ -162,7 +164,7 @@ model Friends {
 model Groups {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   groupName String
-  groupType GroupType
+  founder   String
   UserGroup UserGroup[]
 }
 
@@ -253,9 +255,4 @@ enum Gender {
 enum NotificationStatus {
   active
   inactive
-}
-
-enum GroupType {
-  public
-  private
 }

@@ -561,7 +561,9 @@ export class UserService {
       const imageToDelete = await this.prisma.firsts.findFirst({
         where: { id, usersId: req.user.id },
       });
-      const url = images[0] ? await this.uploadImage(images[0].buffer) : null;
+      const url = images[0]
+        ? await this.uploadImage(images[0].buffer)
+        : imageToDelete.image;
       const publicId = imageToDelete.image.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(publicId, (error) => {
         if (error) {
