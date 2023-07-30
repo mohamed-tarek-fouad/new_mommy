@@ -166,6 +166,7 @@ model Groups {
   groupName String
   founder   String
   UserGroup UserGroup[]
+  Posts     Posts[]
 }
 
 model UserGroup {
@@ -178,11 +179,11 @@ model UserGroup {
 
 model Posts {
   id       String     @id @default(auto()) @map("_id") @db.ObjectId
-  Users    Users      @relation(fields: [usersId], references: [id], onDelete: Cascade)
-  usersId  String     @db.ObjectId
-  caption  String?
-  image    String?
-  video    String?
+  Users    Users?     @relation(fields: [usersId], references: [id], onDelete: Cascade)
+  usersId  String?    @db.ObjectId
+  group    Groups?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId  String?    @db.ObjectId
+  media    String?
   likes    Likes[]
   comments Comments[]
 }
@@ -196,16 +197,12 @@ model Likes {
 }
 
 model Comments {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  comment   String
-  Users     Users      @relation(fields: [usersId], references: [id], onDelete: Cascade)
-  usersId   String     @db.ObjectId
-  post      Posts      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    String     @db.ObjectId
-  tags      String[]
-  replyTo   Comments?  @relation("replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replyToId String?    @db.ObjectId
-  replies   Comments[] @relation("replies")
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  comment String
+  Users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade)
+  usersId String @db.ObjectId
+  post    Posts  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId  String @db.ObjectId
 }
 
 model messages {
