@@ -309,4 +309,32 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
+  async feed(req) {
+    try {
+      const friends = await this.prisma.friends.findMany({
+        where: { OR: [{ friend1Id: req.user.id }, { friend2Id: req.user.id }] },
+      });
+      const groups = await this.prisma.userGroup.findMany({
+        where: { usersId: req.user.id },
+      });
+      const groupsIds = [];
+      groups.forEach((group) => {
+        groupsIds.push(group.groupId);
+      });
+      const friendsIds = [];
+      friends.forEach((friend) => {
+        if (req.user.id === friend.friend1Id) friendsIds.push(friend.friend2Id);
+        else friendsIds.push(friend.friend1Id);
+      });
+      const posts = await this.prisma.posts.findMany({
+        where: {
+          OR: [{ usersId: { in: friendsIds } }, { groupId: { in: groupsIds } }],
+        },
+      });
+
+      return { message: 'all feed retreived successfully', posts };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
 }

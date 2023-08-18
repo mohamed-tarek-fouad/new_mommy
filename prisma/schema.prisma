@@ -184,6 +184,7 @@ model Posts {
   group    Groups?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId  String?    @db.ObjectId
   media    String?
+  caption  String?
   likes    Likes[]
   comments Comments[]
 }

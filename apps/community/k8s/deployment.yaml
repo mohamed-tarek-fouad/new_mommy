@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: community
+spec:
+  selector:
+    matchLabels:
+      app: community
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: community
+    spec:
+      containers:
+        - name: community
+          image: mawlana/community
+          ports:
+            - containerPort: 3003

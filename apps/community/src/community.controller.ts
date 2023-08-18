@@ -137,4 +137,8 @@ export class CommunityController {
   deleteComment(@Param('id') id: string, @Req() req) {
     return this.communityService.deleteComment(id, req);
   }
+  @Get('feed')
+  feed(@Req() req) {
+    return this.communityService.feed(req);
+  }
 }
