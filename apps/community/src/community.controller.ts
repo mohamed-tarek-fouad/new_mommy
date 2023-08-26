@@ -15,6 +15,8 @@ import { CreateGroupDto } from './dtos/createGroup.dto';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { CreatePostDto } from './dtos/createPost.dto';
 import { CommentDto } from './dtos/comment.dto';
+import { Public } from '@app/common/public.decorator';
+import { SearchDto } from './dtos/search.dto';
 
 @Controller()
 export class CommunityController {
@@ -140,5 +142,19 @@ export class CommunityController {
   @Get('feed')
   feed(@Req() req) {
     return this.communityService.feed(req);
+  }
+  @Public()
+  @Get('postsById/:id')
+  postsById(@Param('id') id: string) {
+    return this.communityService.postsById(id);
+  }
+  @Get('recommendedGroups')
+  recommendedGroups() {
+    return this.communityService.recommendedGroups();
+  }
+  @Public()
+  @Get('search')
+  searsh(@Body() searchDto: SearchDto) {
+    return this.communityService.search(searchDto);
   }
 }

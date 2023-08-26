@@ -7,6 +7,7 @@ import { CreateGroupDto } from './dtos/createGroup.dto';
 import { CreatePostDto } from './dtos/createPost.dto';
 import { v2 as cloudinary } from 'cloudinary';
 import { CommentDto } from './dtos/comment.dto';
+import { SearchDto } from './dtos/search.dto';
 @Injectable()
 export class CommunityService {
   constructor(private readonly prisma: PrismaService) {
@@ -326,6 +327,7 @@ export class CommunityService {
         if (req.user.id === friend.friend1Id) friendsIds.push(friend.friend2Id);
         else friendsIds.push(friend.friend1Id);
       });
+      friendsIds.push(req.user.id);
       const posts = await this.prisma.posts.findMany({
         where: {
           OR: [{ usersId: { in: friendsIds } }, { groupId: { in: groupsIds } }],
@@ -333,6 +335,44 @@ export class CommunityService {
       });
 
       return { message: 'all feed retreived successfully', posts };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async postsById(id: string) {
+    try {
+      const posts = await this.prisma.posts.findMany({
+        where: { usersId: id },
+      });
+      return { message: 'retrieved all posts successfully', posts };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async recommendedGroups() {
+    try {
+      const groups = await this.prisma.groups.findMany({
+        take: 10,
+      });
+      return { message: 'groups retrieved successfully', groups };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async search(searchDto: SearchDto) {
+    try {
+      const users = await this.prisma.users.findMany({
+        where: {
+          OR: [
+            { firstname: { contains: searchDto.searchText } },
+            { lastname: { contains: searchDto.searchText } },
+          ],
+        },
+      });
+      const groups = await this.prisma.groups.findMany({
+        where: { groupName: { contains: searchDto.searchText } },
+      });
+      return { message: 'results are as following', users, groups };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
