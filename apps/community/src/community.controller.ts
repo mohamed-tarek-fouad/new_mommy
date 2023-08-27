@@ -21,7 +21,21 @@ import { SearchDto } from './dtos/search.dto';
 @Controller()
 export class CommunityController {
   constructor(private readonly communityService: CommunityService) {}
-
+  @UseInterceptors(
+    FilesInterceptor('images', 2, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @Patch('updateProfile')
+  updateProfile(@Req() req, @UploadedFiles() images: any) {
+    return this.communityService.updateProfile(req, images);
+  }
   @Post('sendFriendRequest/:id')
   sendFriendRequest(@Req() req, @Param('id') id: string) {
     return this.communityService.sendFriendRequest(id, req);
@@ -46,17 +60,44 @@ export class CommunityController {
   allFriends(@Req() req) {
     return this.communityService.allFriends(req);
   }
+  @UseInterceptors(
+    FilesInterceptor('images', 2, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Post('createGroup')
-  createGroup(@Req() req, @Body() createGroupDto: CreateGroupDto) {
-    return this.communityService.createGroup(createGroupDto, req);
+  createGroup(
+    @Req() req,
+    @Body() createGroupDto: CreateGroupDto,
+    @UploadedFiles() images: any,
+  ) {
+    return this.communityService.createGroup(createGroupDto, req, images);
   }
+  @UseInterceptors(
+    FilesInterceptor('images', 2, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   @Patch('updateGroup/:id')
   updateGroup(
     @Req() req,
     @Param('id') id: string,
     @Body() updateGroupDto: CreateGroupDto,
+    @UploadedFiles() images: any,
   ) {
-    return this.communityService.updateGroup(updateGroupDto, id, req);
+    return this.communityService.updateGroup(updateGroupDto, id, req, images);
   }
   @Get('allMyGroups')
   allMyGroups(@Req() req) {
@@ -144,7 +185,7 @@ export class CommunityController {
     return this.communityService.feed(req);
   }
   @Public()
-  @Get('postsById/:id')
+  @Get('profileById/:id')
   postsById(@Param('id') id: string) {
     return this.communityService.postsById(id);
   }

@@ -132,10 +132,12 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async createGroup(createGroupDto: CreateGroupDto, req) {
+  async createGroup(createGroupDto: CreateGroupDto, req, images) {
     try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
       const group = await this.prisma.groups.create({
-        data: { ...createGroupDto, founder: req.user.id },
+        data: { ...createGroupDto, founder: req.user.id, cover, image: url },
       });
       await this.prisma.userGroup.create({
         data: { usersId: req.user.id, groupId: group.id },
@@ -145,12 +147,23 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async updateGroup(updateGroupDto: CreateGroupDto, id: string, req) {
+  async updateGroup(updateGroupDto: CreateGroupDto, id: string, req, images) {
     try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
       await this.prisma.groups.updateMany({
         where: { id, founder: req.user.id },
-        data: updateGroupDto,
+        data: { ...updateGroupDto, cover, image: url },
       });
+      // const imageToDelete = await this.prisma.groups.findUnique({
+      //   where: { id },
+      // });
+      // const publicId = imageToDelete.image.split('/').pop().split('.')[0];
+      // await cloudinary.uploader.destroy(publicId, (error) => {
+      //   if (error) {
+      //     throw new HttpException(error, HttpStatus.BAD_REQUEST);
+      //   }
+      // });
       const group = await this.prisma.groups.findFirst({
         where: { id, founder: req.user.id },
       });
@@ -174,6 +187,7 @@ export class CommunityService {
     try {
       const group = await this.prisma.userGroup.findMany({
         where: { groupId: id },
+        include: { group: { include: { Posts: true } } },
       });
       return { message: 'group retrieved successfully', group };
     } catch (err) {
@@ -373,6 +387,24 @@ export class CommunityService {
         where: { groupName: { contains: searchDto.searchText } },
       });
       return { message: 'results are as following', users, groups };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async updateProfile(req, images) {
+    try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
+      console.log(url, cover);
+      await this.prisma.users.update({
+        where: { id: req.user.id },
+        data: { image: url, cover },
+      });
+      return {
+        message: 'profile updated successfully',
+        profileImage: url,
+        cover,
+      };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }

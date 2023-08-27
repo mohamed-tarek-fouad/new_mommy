@@ -75,6 +75,7 @@ export class AuthService {
       // await this.cacheManager.del('users');
       const tokens = await this.getTokens(user.id, user.email, user.role);
       await this.updateRtHash(user.id, tokens.refresh_token);
+      delete user.password;
       return {
         ...user,
         ...tokens,
@@ -410,7 +411,7 @@ export class AuthService {
             email: emails[0].value,
             firstname: name.givenName,
             lastname: name.familyName,
-            picture: photos[0].value,
+            image: photos[0].value,
             provider: 'google',
           },
         });
@@ -468,7 +469,7 @@ export class AuthService {
             email: emails[0].value,
             firstname: name.givenName,
             lastname: name.familyName,
-            picture: photos[0].value,
+            image: photos[0].value,
             provider: 'facebook',
           },
         });

@@ -20,7 +20,8 @@ model Users {
   birthDate               String?
   address                 Address?
   hashedRt                String?
-  picture                 String?
+  image                   String?
+  cover                   String?
   role                    UserRole           @default(user)
   provider                Provider?
   baby                    Baby[]
@@ -165,6 +166,8 @@ model Groups {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   groupName String
   founder   String
+  image     String?
+  cover     String?
   UserGroup UserGroup[]
   Posts     Posts[]
 }
