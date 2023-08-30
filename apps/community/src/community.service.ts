@@ -176,7 +176,7 @@ export class CommunityService {
     try {
       const groups = await this.prisma.userGroup.findMany({
         where: { usersId: req.user.id },
-        include: { group: true },
+        include: { group: true, Users: { select: { id: true } } },
       });
       return { message: 'all groups retrieved successfully', groups };
     } catch (err) {
@@ -187,7 +187,19 @@ export class CommunityService {
     try {
       const group = await this.prisma.userGroup.findMany({
         where: { groupId: id },
-        include: { group: { include: { Posts: true } } },
+        include: {
+          group: {
+            include: {
+              Posts: {
+                include: {
+                  comments: { select: { id: true } },
+                  likes: { select: { id: true } },
+                },
+              },
+            },
+          },
+          Users: { select: { id: true } },
+        },
       });
       return { message: 'group retrieved successfully', group };
     } catch (err) {
@@ -346,6 +358,10 @@ export class CommunityService {
         where: {
           OR: [{ usersId: { in: friendsIds } }, { groupId: { in: groupsIds } }],
         },
+        include: {
+          comments: { select: { id: true } },
+          likes: { select: { id: true } },
+        },
       });
 
       return { message: 'all feed retreived successfully', posts };
@@ -357,6 +373,10 @@ export class CommunityService {
     try {
       const posts = await this.prisma.posts.findMany({
         where: { usersId: id },
+        include: {
+          comments: { select: { id: true } },
+          likes: { select: { id: true } },
+        },
       });
       return { message: 'retrieved all posts successfully', posts };
     } catch (err) {
