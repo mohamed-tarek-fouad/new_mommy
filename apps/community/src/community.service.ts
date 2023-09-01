@@ -251,6 +251,7 @@ export class CommunityService {
           groupId: id,
           usersId: req.user.id,
           media: url,
+          time: new Date().toISOString(),
         },
       });
       return { message: 'post created successfully', post };
@@ -266,6 +267,7 @@ export class CommunityService {
           ...createPostDto,
           usersId: req.user.id,
           media: url,
+          time: new Date().toISOString(),
         },
       });
       return { message: 'post created successfully', post };
@@ -361,6 +363,9 @@ export class CommunityService {
         include: {
           comments: { select: { id: true } },
           likes: { select: { id: true } },
+          Users: {
+            select: { firstname: true, lastname: true, image: true, id: true },
+          },
         },
       });
 
@@ -374,8 +379,11 @@ export class CommunityService {
       const posts = await this.prisma.posts.findMany({
         where: { usersId: id },
         include: {
-          comments: { select: { id: true } },
-          likes: { select: { id: true } },
+          comments: true,
+          likes: true,
+          Users: {
+            select: { firstname: true, lastname: true, image: true, id: true },
+          },
         },
       });
       return { message: 'retrieved all posts successfully', posts };
@@ -387,7 +395,9 @@ export class CommunityService {
     try {
       const groups = await this.prisma.groups.findMany({
         take: 10,
+        include: { UserGroup: { select: { usersId: true } } },
       });
+
       return { message: 'groups retrieved successfully', groups };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);

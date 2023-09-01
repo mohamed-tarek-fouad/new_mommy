@@ -188,6 +188,7 @@ model Posts {
   groupId  String?    @db.ObjectId
   media    String?
   caption  String?
+  time     String
   likes    Likes[]
   comments Comments[]
 }
