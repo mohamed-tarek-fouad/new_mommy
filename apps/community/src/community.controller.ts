@@ -61,7 +61,7 @@ export class CommunityController {
     return this.communityService.allFriends(req);
   }
   @UseInterceptors(
-    FilesInterceptor('images', 2, {
+    FilesInterceptor('images', 1, {
       preservePath: true,
       fileFilter(req, file, cb) {
         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
@@ -172,14 +172,14 @@ export class CommunityController {
   unlike(@Param('id') id: string, @Req() req) {
     return this.communityService.unlike(id, req);
   }
-  @Post('comment/:id')
-  comment(@Param('id') id: string, @Req() req, @Body() commentDto: CommentDto) {
-    return this.communityService.comment(commentDto, id, req);
-  }
-  @Delete('comment/:id')
-  deleteComment(@Param('id') id: string, @Req() req) {
-    return this.communityService.deleteComment(id, req);
-  }
+  // @Post('comment/:id')
+  // comment(@Param('id') id: string, @Req() req, @Body() commentDto: CommentDto) {
+  //   return this.communityService.comment(commentDto, id, req);
+  // }
+  // @Delete('comment/:id')
+  // deleteComment(@Param('id') id: string, @Req() req) {
+  //   return this.communityService.deleteComment(id, req);
+  // }
   @Get('feed')
   feed(@Req() req) {
     return this.communityService.feed(req);

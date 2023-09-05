@@ -134,8 +134,8 @@ export class CommunityService {
   }
   async createGroup(createGroupDto: CreateGroupDto, req, images) {
     try {
-      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
-      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : null;
+      const cover = images[1] ? await this.uploadImage(images[1].buffer) : null;
       const group = await this.prisma.groups.create({
         data: { ...createGroupDto, founder: req.user.id, cover, image: url },
       });
@@ -176,8 +176,9 @@ export class CommunityService {
     try {
       const groups = await this.prisma.userGroup.findMany({
         where: { usersId: req.user.id },
-        include: { group: true, Users: { select: { id: true } } },
+        include: { group: true },
       });
+
       return { message: 'all groups retrieved successfully', groups };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
@@ -185,20 +186,13 @@ export class CommunityService {
   }
   async groupById(id: string) {
     try {
-      const group = await this.prisma.userGroup.findMany({
-        where: { groupId: id },
+      const group = await this.prisma.groups.findMany({
+        where: {
+          id,
+        },
         include: {
-          group: {
-            include: {
-              Posts: {
-                include: {
-                  comments: { select: { id: true } },
-                  likes: { select: { id: true } },
-                },
-              },
-            },
-          },
-          Users: { select: { id: true } },
+          UserGroup: { select: { usersId: true } },
+          Posts: { include: { likes: { select: { usersId: true } } } },
         },
       });
       return { message: 'group retrieved successfully', group };
@@ -207,19 +201,33 @@ export class CommunityService {
     }
   }
   async joinGroup(id: string, req) {
-    try {
-      await this.prisma.userGroup.create({
-        data: { usersId: req.user.id, groupId: id },
-      });
-      return { message: 'joined group successfully' };
-    } catch (err) {
-      throw new HttpException(err, HttpStatus.BAD_REQUEST);
-    }
+    const userGroup = await this.prisma.userGroup.findFirst({
+      where: { groupId: id, usersId: req.user.id },
+    });
+    if (userGroup)
+      throw new HttpException('you already joined', HttpStatus.BAD_REQUEST);
+    await this.prisma.userGroup.create({
+      data: { usersId: req.user.id, groupId: id },
+    });
+    await this.prisma.groups.update({
+      where: { id },
+      data: { count: { increment: 1 } },
+    });
+    return { message: 'joined group successfully' };
   }
   async leaveGroup(id: string, req) {
     try {
+      const userGroup = await this.prisma.userGroup.findFirst({
+        where: { groupId: id, usersId: req.user.id },
+      });
+      if (!userGroup)
+        throw new HttpException('you already left', HttpStatus.BAD_REQUEST);
       await this.prisma.userGroup.deleteMany({
         where: { id, usersId: req.user.id },
+      });
+      await this.prisma.groups.update({
+        where: { id },
+        data: { count: { decrement: 1 } },
       });
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
@@ -280,12 +288,14 @@ export class CommunityService {
       const imageToDelete = await this.prisma.posts.findFirst({
         where: { id, usersId: req.user.id },
       });
-      const publicId = imageToDelete.media.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(publicId, (error) => {
-        if (error) {
-          throw new HttpException(error, HttpStatus.BAD_REQUEST);
-        }
-      });
+      const publicId = imageToDelete.media?.split('/').pop().split('.')[0];
+      publicId
+        ? await cloudinary.uploader.destroy(publicId, (error) => {
+            if (error) {
+              throw new HttpException(error, HttpStatus.BAD_REQUEST);
+            }
+          })
+        : null;
       await this.prisma.posts.deleteMany({
         where: {
           id,
@@ -298,28 +308,48 @@ export class CommunityService {
     }
   }
   async like(id: string, req) {
-    try {
-      await this.prisma.likes.create({
-        data: { usersId: req.user.id, postId: id },
-      });
-      return { message: 'liked successfully' };
-    } catch (err) {
-      throw new HttpException(err, HttpStatus.BAD_REQUEST);
-    }
+    const like = await this.prisma.likes.findFirst({
+      where: { usersId: req.user.id, postId: id },
+    });
+    if (like)
+      throw new HttpException(
+        'you have already liked this post',
+        HttpStatus.BAD_REQUEST,
+      );
+    await this.prisma.likes.create({
+      data: { usersId: req.user.id, postId: id },
+    });
+    await this.prisma.posts.update({
+      where: { id },
+      data: { likeCount: { increment: 1 } },
+    });
+    return { message: 'liked successfully' };
   }
   async unlike(id: string, req) {
-    try {
-      await this.prisma.likes.deleteMany({
-        where: { id, usersId: req.user.id },
-      });
-    } catch (err) {
-      throw new HttpException(err, HttpStatus.BAD_REQUEST);
-    }
+    const like = await this.prisma.likes.findFirst({
+      where: { usersId: req.user.id, postId: id },
+    });
+    if (!like)
+      throw new HttpException(
+        'you have not liked this post',
+        HttpStatus.BAD_REQUEST,
+      );
+    await this.prisma.likes.deleteMany({
+      where: { id, usersId: req.user.id },
+    });
+    await this.prisma.posts.update({
+      where: { id },
+      data: { likeCount: { decrement: 1 } },
+    });
   }
   async comment(commentDto: CommentDto, id: string, req) {
     try {
       const comment = await this.prisma.comments.create({
         data: { ...commentDto, postId: id, usersId: req.user.id },
+      });
+      await this.prisma.posts.update({
+        where: { id },
+        data: { commentCount: { increment: 1 } },
       });
       return { message: 'comment added successfully', comment };
     } catch (err) {
@@ -333,6 +363,10 @@ export class CommunityService {
           id,
           usersId: req.user.id,
         },
+      });
+      await this.prisma.posts.update({
+        where: { id },
+        data: { likeCount: { decrement: 1 } },
       });
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
@@ -361,11 +395,16 @@ export class CommunityService {
           OR: [{ usersId: { in: friendsIds } }, { groupId: { in: groupsIds } }],
         },
         include: {
-          comments: { select: { id: true } },
-          likes: { select: { id: true } },
           Users: {
-            select: { firstname: true, lastname: true, image: true, id: true },
+            select: {
+              firstname: true,
+              lastname: true,
+              image: true,
+              id: true,
+              cover: true,
+            },
           },
+          likes: { select: { usersId: true } },
         },
       });
 
@@ -376,17 +415,22 @@ export class CommunityService {
   }
   async postsById(id: string) {
     try {
-      const posts = await this.prisma.posts.findMany({
-        where: { usersId: id },
-        include: {
-          comments: true,
-          likes: true,
-          Users: {
-            select: { firstname: true, lastname: true, image: true, id: true },
-          },
+      const user = await this.prisma.users.findUnique({
+        where: { id },
+        select: {
+          firstname: true,
+          lastname: true,
+          image: true,
+          cover: true,
+          id: true,
         },
       });
-      return { message: 'retrieved all posts successfully', posts };
+
+      const posts = await this.prisma.posts.findMany({
+        where: { usersId: id },
+        include: { likes: { select: { usersId: true } } },
+      });
+      return { message: 'retrieved all posts successfully', posts, user };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }

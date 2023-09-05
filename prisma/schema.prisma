@@ -168,6 +168,7 @@ model Groups {
   founder   String
   image     String?
   cover     String?
+  count     Int         @default(1)
   UserGroup UserGroup[]
   Posts     Posts[]
 }
@@ -181,16 +182,18 @@ model UserGroup {
 }
 
 model Posts {
-  id       String     @id @default(auto()) @map("_id") @db.ObjectId
-  Users    Users?     @relation(fields: [usersId], references: [id], onDelete: Cascade)
-  usersId  String?    @db.ObjectId
-  group    Groups?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId  String?    @db.ObjectId
-  media    String?
-  caption  String?
-  time     String
-  likes    Likes[]
-  comments Comments[]
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  Users        Users?     @relation(fields: [usersId], references: [id], onDelete: Cascade)
+  usersId      String?    @db.ObjectId
+  group        Groups?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId      String?    @db.ObjectId
+  media        String?
+  caption      String?
+  likeCount    Int        @default(0)
+  commentCount Int        @default(0)
+  time         String
+  likes        Likes[]
+  comments     Comments[]
 }
 
 model Likes {
