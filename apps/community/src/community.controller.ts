@@ -9,10 +9,11 @@ import {
   UseInterceptors,
   UploadedFiles,
   Delete,
+  UploadedFile,
 } from '@nestjs/common';
 import { CommunityService } from './community.service';
 import { CreateGroupDto } from './dtos/createGroup.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { CreatePostDto } from './dtos/createPost.dto';
 import { CommentDto } from './dtos/comment.dto';
 import { Public } from '@app/common/public.decorator';
@@ -22,7 +23,7 @@ import { SearchDto } from './dtos/search.dto';
 export class CommunityController {
   constructor(private readonly communityService: CommunityService) {}
   @UseInterceptors(
-    FilesInterceptor('images', 2, {
+    FilesInterceptor('images', 1, {
       preservePath: true,
       fileFilter(req, file, cb) {
         if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
@@ -32,9 +33,24 @@ export class CommunityController {
       },
     }),
   )
-  @Patch('updateProfile')
-  updateProfile(@Req() req, @UploadedFiles() images: any) {
-    return this.communityService.updateProfile(req, images);
+  @Post('uploadProfileImage')
+  uploadProfileImage(@Req() req, @UploadedFiles() images: any) {
+    return this.communityService.uploadProfileImage(req, images);
+  }
+  @UseInterceptors(
+    FilesInterceptor('images', 1, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @Post('uploadProfileCover')
+  uploadProfileCover(@Req() req, @UploadedFiles() images: any) {
+    return this.communityService.uploadProfileCover(req, images);
   }
   @Post('sendFriendRequest/:id')
   sendFriendRequest(@Req() req, @Param('id') id: string) {
@@ -60,52 +76,26 @@ export class CommunityController {
   allFriends(@Req() req) {
     return this.communityService.allFriends(req);
   }
-  @UseInterceptors(
-    FilesInterceptor('images', 1, {
-      preservePath: true,
-      fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-          return cb(new Error('Only image  are allowed!'), false);
-        }
-        cb(null, true);
-      },
-    }),
-  )
   @Post('createGroup')
-  createGroup(
-    @Req() req,
-    @Body() createGroupDto: CreateGroupDto,
-    @UploadedFiles() images: any,
-  ) {
-    return this.communityService.createGroup(createGroupDto, req, images);
+  createGroup(@Req() req, @Body() createGroupDto: CreateGroupDto) {
+    return this.communityService.createGroup(createGroupDto, req);
   }
-  @UseInterceptors(
-    FilesInterceptor('images', 2, {
-      preservePath: true,
-      fileFilter(req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
-          return cb(new Error('Only image  are allowed!'), false);
-        }
-        cb(null, true);
-      },
-    }),
-  )
+
   @Patch('updateGroup/:id')
   updateGroup(
     @Req() req,
     @Param('id') id: string,
     @Body() updateGroupDto: CreateGroupDto,
-    @UploadedFiles() images: any,
   ) {
-    return this.communityService.updateGroup(updateGroupDto, id, req, images);
+    return this.communityService.updateGroup(updateGroupDto, id, req);
   }
   @Get('allMyGroups')
   allMyGroups(@Req() req) {
     return this.communityService.allMyGroups(req);
   }
   @Get('groupById/:id')
-  groupById(@Param('id') id: string) {
-    return this.communityService.groupById(id);
+  groupById(@Param('id') id: string, @Req() req) {
+    return this.communityService.groupById(id, req);
   }
   @Post('joinGroup/:id')
   joinGroup(@Param('id') id: string, @Req() req) {
@@ -172,22 +162,26 @@ export class CommunityController {
   unlike(@Param('id') id: string, @Req() req) {
     return this.communityService.unlike(id, req);
   }
-  // @Post('comment/:id')
-  // comment(@Param('id') id: string, @Req() req, @Body() commentDto: CommentDto) {
-  //   return this.communityService.comment(commentDto, id, req);
-  // }
-  // @Delete('comment/:id')
-  // deleteComment(@Param('id') id: string, @Req() req) {
-  //   return this.communityService.deleteComment(id, req);
-  // }
+  @Post('comment/:id')
+  comment(@Param('id') id: string, @Req() req, @Body() commentDto: CommentDto) {
+    return this.communityService.comment(commentDto, id, req);
+  }
+  @Delete('comment/:id')
+  deleteComment(@Param('id') id: string, @Req() req) {
+    return this.communityService.deleteComment(id, req);
+  }
   @Get('feed')
   feed(@Req() req) {
     return this.communityService.feed(req);
   }
-  @Public()
+
   @Get('profileById/:id')
-  postsById(@Param('id') id: string) {
-    return this.communityService.postsById(id);
+  postsById(@Param('id') id: string, @Req() req) {
+    return this.communityService.postsById(id, req);
+  }
+  @Get('myProfile')
+  myProfile(@Req() req) {
+    return this.communityService.myProfile(req);
   }
   @Get('recommendedGroups')
   recommendedGroups() {
@@ -197,5 +191,43 @@ export class CommunityController {
   @Get('search')
   searsh(@Body() searchDto: SearchDto) {
     return this.communityService.search(searchDto);
+  }
+  @UseInterceptors(
+    FilesInterceptor('images', 1, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @Post('uploadGroupCover/:id')
+  uploadGroupCover(
+    @Req() req,
+    @UploadedFiles() images: any,
+    @Param('id') id: string,
+  ) {
+    return this.communityService.uploadGroupCover(req, images, id);
+  }
+  @UseInterceptors(
+    FilesInterceptor('images', 1, {
+      preservePath: true,
+      fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+          return cb(new Error('Only image  are allowed!'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  @Post('uploadGroupImage/:id')
+  uploadGroupImage(
+    @Req() req,
+    @UploadedFiles() images: any,
+    @Param('id') id: string,
+  ) {
+    return this.communityService.uploadGroupImage(req, images, id);
   }
 }

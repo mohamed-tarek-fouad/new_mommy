@@ -43,7 +43,15 @@ export class CommunityService {
           ],
         },
       });
-      if (previusFriendRequest) {
+      const friend = await this.prisma.friends.findFirst({
+        where: {
+          OR: [
+            { friend1Id: id, friend2Id: req.user.id },
+            { friend1Id: req.user.id, friend2Id: id },
+          ],
+        },
+      });
+      if (previusFriendRequest || friend) {
         return { message: 'request already sent' };
       }
       const friendRequest = await this.prisma.friendRequest.create({
@@ -79,7 +87,7 @@ export class CommunityService {
   async rejectFriendRequest(id: string, req) {
     try {
       await this.prisma.friendRequest.deleteMany({
-        where: { id, user2Id: req.user.id },
+        where: { user1Id: id, user2Id: req.user.id },
       });
       return { message: 'deleted friend request successfully' };
     } catch (err) {
@@ -91,8 +99,8 @@ export class CommunityService {
       await this.prisma.friends.deleteMany({
         where: {
           OR: [
-            { id, friend1Id: req.user.id },
-            { id, friend2Id: req.user.id },
+            { friend2Id: id, friend1Id: req.user.id },
+            { friend1Id: id, friend2Id: req.user.id },
           ],
         },
       });
@@ -132,12 +140,10 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async createGroup(createGroupDto: CreateGroupDto, req, images) {
+  async createGroup(createGroupDto: CreateGroupDto, req) {
     try {
-      const url = images[0] ? await this.uploadImage(images[0].buffer) : null;
-      const cover = images[1] ? await this.uploadImage(images[1].buffer) : null;
       const group = await this.prisma.groups.create({
-        data: { ...createGroupDto, founder: req.user.id, cover, image: url },
+        data: { ...createGroupDto, founder: req.user.id },
       });
       await this.prisma.userGroup.create({
         data: { usersId: req.user.id, groupId: group.id },
@@ -147,13 +153,11 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async updateGroup(updateGroupDto: CreateGroupDto, id: string, req, images) {
+  async updateGroup(updateGroupDto: CreateGroupDto, id: string, req) {
     try {
-      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
-      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
       await this.prisma.groups.updateMany({
         where: { id, founder: req.user.id },
-        data: { ...updateGroupDto, cover, image: url },
+        data: { ...updateGroupDto },
       });
       // const imageToDelete = await this.prisma.groups.findUnique({
       //   where: { id },
@@ -184,18 +188,42 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async groupById(id: string) {
+  async groupById(id: string, req) {
     try {
-      const group = await this.prisma.groups.findMany({
-        where: {
-          id,
-        },
-        include: {
-          UserGroup: { select: { usersId: true } },
-          Posts: { include: { likes: { select: { usersId: true } } } },
-        },
+      const group = await this.prisma.groups.findUnique({
+        where: { id },
       });
-      return { message: 'group retrieved successfully', group };
+      const userInGroup = await this.prisma.userGroup.findFirst({
+        where: { usersId: req.user.id, groupId: id },
+      });
+
+      const posts = await this.prisma.posts.findMany({
+        where: { groupId: id },
+        include: {
+          likes: { select: { usersId: true } },
+          comments: true,
+        },
+        orderBy: { time: 'desc' },
+      });
+      const isFriend = userInGroup ? true : false;
+      const updatedPosts = posts.map((post) => {
+        const userExistsInLikes = post.likes.some(
+          (like) => like.usersId === req.user.id,
+        );
+
+        return {
+          ...post,
+          userExistsInLikes,
+
+          likes: undefined, // Remove the 'likes' property
+        };
+      });
+      return {
+        message: 'retrieved all posts successfully',
+        posts: updatedPosts,
+        userExistsInGroup: isFriend,
+        group,
+      };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
@@ -223,12 +251,13 @@ export class CommunityService {
       if (!userGroup)
         throw new HttpException('you already left', HttpStatus.BAD_REQUEST);
       await this.prisma.userGroup.deleteMany({
-        where: { id, usersId: req.user.id },
+        where: { groupId: id, usersId: req.user.id },
       });
       await this.prisma.groups.update({
         where: { id },
         data: { count: { decrement: 1 } },
       });
+      return { message: 'left group successfully' };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
@@ -329,18 +358,21 @@ export class CommunityService {
     const like = await this.prisma.likes.findFirst({
       where: { usersId: req.user.id, postId: id },
     });
+
     if (!like)
       throw new HttpException(
         'you have not liked this post',
         HttpStatus.BAD_REQUEST,
       );
     await this.prisma.likes.deleteMany({
-      where: { id, usersId: req.user.id },
+      where: { postId: id, usersId: req.user.id },
     });
+
     await this.prisma.posts.update({
       where: { id },
       data: { likeCount: { decrement: 1 } },
     });
+    return { message: 'disliked successfully' };
   }
   async comment(commentDto: CommentDto, id: string, req) {
     try {
@@ -358,6 +390,12 @@ export class CommunityService {
   }
   async deleteComment(id: string, req) {
     try {
+      const comment = await this.prisma.comments.findUnique({ where: { id } });
+      if (!comment)
+        throw new HttpException(
+          'there is no comment with this id',
+          HttpStatus.BAD_REQUEST,
+        );
       await this.prisma.comments.deleteMany({
         where: {
           id,
@@ -366,7 +404,7 @@ export class CommunityService {
       });
       await this.prisma.posts.update({
         where: { id },
-        data: { likeCount: { decrement: 1 } },
+        data: { commentCount: { decrement: 1 } },
       });
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
@@ -374,26 +412,7 @@ export class CommunityService {
   }
   async feed(req) {
     try {
-      const friends = await this.prisma.friends.findMany({
-        where: { OR: [{ friend1Id: req.user.id }, { friend2Id: req.user.id }] },
-      });
-      const groups = await this.prisma.userGroup.findMany({
-        where: { usersId: req.user.id },
-      });
-      const groupsIds = [];
-      groups.forEach((group) => {
-        groupsIds.push(group.groupId);
-      });
-      const friendsIds = [];
-      friends.forEach((friend) => {
-        if (req.user.id === friend.friend1Id) friendsIds.push(friend.friend2Id);
-        else friendsIds.push(friend.friend1Id);
-      });
-      friendsIds.push(req.user.id);
       const posts = await this.prisma.posts.findMany({
-        where: {
-          OR: [{ usersId: { in: friendsIds } }, { groupId: { in: groupsIds } }],
-        },
         include: {
           Users: {
             select: {
@@ -405,15 +424,32 @@ export class CommunityService {
             },
           },
           likes: { select: { usersId: true } },
+          comments: true,
+          group: { select: { groupName: true } },
         },
+        orderBy: { time: 'desc' },
       });
+      const updatedPosts = posts.map((post) => {
+        const userExistsInLikes = post.likes.some(
+          (like) => like.usersId === req.user.id,
+        );
 
-      return { message: 'all feed retreived successfully', posts };
+        return {
+          ...post,
+          userExistsInLikes,
+
+          likes: undefined, // Remove the 'likes' property
+        };
+      });
+      return {
+        message: 'all feed retreived successfully',
+        posts: updatedPosts,
+      };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async postsById(id: string) {
+  async postsById(id: string, req) {
     try {
       const user = await this.prisma.users.findUnique({
         where: { id },
@@ -425,10 +461,61 @@ export class CommunityService {
           id: true,
         },
       });
+      const friend = await this.prisma.friends.findFirst({
+        where: { OR: [{ friend1Id: id }, { friend2Id: id }] },
+      });
 
       const posts = await this.prisma.posts.findMany({
         where: { usersId: id },
-        include: { likes: { select: { usersId: true } } },
+        include: {
+          likes: { select: { usersId: true } },
+          comments: true,
+        },
+        orderBy: { time: 'desc' },
+      });
+      const isFriend = friend ? true : false;
+      const updatedPosts = posts.map((post) => {
+        const userExistsInLikes = post.likes.some(
+          (like) => like.usersId === req.user.id,
+        );
+
+        return {
+          ...post,
+          userExistsInLikes,
+
+          likes: undefined, // Remove the 'likes' property
+        };
+      });
+      return {
+        message: 'retrieved all posts successfully',
+        posts: updatedPosts,
+        userExistsInFriends: isFriend,
+        user,
+      };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async myProfile(req) {
+    try {
+      const user = await this.prisma.users.findUnique({
+        where: { id: req.user.id },
+        select: {
+          firstname: true,
+          lastname: true,
+          image: true,
+          cover: true,
+          id: true,
+        },
+      });
+
+      const posts = await this.prisma.posts.findMany({
+        where: { usersId: req.user.id },
+        include: {
+          likes: { select: { usersId: true } },
+          comments: true,
+        },
+        orderBy: { time: 'desc' },
       });
       return { message: 'retrieved all posts successfully', posts, user };
     } catch (err) {
@@ -465,19 +552,65 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async updateProfile(req, images) {
+  async uploadProfileImage(req, images) {
     try {
       const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
-      const cover = images[1] ? await this.uploadImage(images[1].buffer) : '';
-      console.log(url, cover);
+
       await this.prisma.users.update({
         where: { id: req.user.id },
-        data: { image: url, cover },
+        data: { image: url },
       });
       return {
         message: 'profile updated successfully',
         profileImage: url,
-        cover,
+      };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async uploadProfileCover(req, images) {
+    try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+
+      await this.prisma.users.update({
+        where: { id: req.user.id },
+        data: { cover: url },
+      });
+      return {
+        message: 'profile updated successfully',
+        profileImage: url,
+      };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async uploadGroupCover(req, images, id: string) {
+    try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+
+      await this.prisma.groups.updateMany({
+        where: { id, founder: req.user.id },
+        data: { cover: url },
+      });
+      return {
+        message: 'group updated successfully',
+        profileImage: url,
+      };
+    } catch (err) {
+      throw new HttpException(err, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async uploadGroupImage(req, images, id: string) {
+    try {
+      const url = images[0] ? await this.uploadImage(images[0].buffer) : '';
+
+      await this.prisma.groups.updateMany({
+        where: { id, founder: req.user.id },
+        data: { image: url },
+      });
+      return {
+        message: 'group updated successfully',
+        profileImage: url,
       };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
