@@ -184,8 +184,8 @@ export class CommunityController {
     return this.communityService.myProfile(req);
   }
   @Get('recommendedGroups')
-  recommendedGroups() {
-    return this.communityService.recommendedGroups();
+  recommendedGroups(@Req() req) {
+    return this.communityService.recommendedGroups(req);
   }
   @Public()
   @Get('search')

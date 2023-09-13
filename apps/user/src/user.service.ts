@@ -127,12 +127,14 @@ export class UserService {
       const imageToDelete = await this.prisma.baby.findFirst({
         where: { id, usersId: req.user.id },
       });
-      const publicId = imageToDelete.image.split('/').pop().split('.')[0];
-      await cloudinary.uploader.destroy(publicId, (error) => {
-        if (error) {
-          throw new HttpException(error, HttpStatus.BAD_REQUEST);
-        }
-      });
+      if (imageToDelete) {
+        const publicId = imageToDelete.image.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId, (error) => {
+          if (error) {
+            throw new HttpException(error, HttpStatus.BAD_REQUEST);
+          }
+        });
+      }
       await this.prisma.baby.deleteMany({
         where: {
           usersId: req.user.id,

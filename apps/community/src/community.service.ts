@@ -113,6 +113,9 @@ export class CommunityService {
     try {
       const allFriendRequests = await this.prisma.friendRequest.findMany({
         where: { user2Id: req.user.id },
+        include: {
+          user2: { select: { firstname: true, lastname: true, image: true } },
+        },
       });
       return { message: 'all friend requests', allFriendRequests };
     } catch (err) {
@@ -202,6 +205,7 @@ export class CommunityService {
         include: {
           likes: { select: { usersId: true } },
           comments: true,
+          Users: { select: { firstname: true, lastname: true, image: true } },
         },
         orderBy: { time: 'desc' },
       });
@@ -522,14 +526,22 @@ export class CommunityService {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
   }
-  async recommendedGroups() {
+  async recommendedGroups(req) {
     try {
-      const groups = await this.prisma.groups.findMany({
-        take: 10,
-        include: { UserGroup: { select: { usersId: true } } },
+      const groups = await this.prisma.groups.findMany({});
+      const userGroup = await this.prisma.userGroup.findMany({
+        where: { usersId: req.user.id },
       });
+      const groupsNotJoined = [];
+      for (let i = 0; i < groups.length; i++) {
+        for (let j = 0; j < userGroup.length; j++) {
+          if (groups[i].id !== userGroup[j].groupId) {
+            groupsNotJoined.push(groups[i]);
+          }
+        }
+      }
 
-      return { message: 'groups retrieved successfully', groups };
+      return { message: 'groups retrieved successfully', groupsNotJoined };
     } catch (err) {
       throw new HttpException(err, HttpStatus.BAD_REQUEST);
     }
